@@ -29,6 +29,6 @@ timeout-decorator==0.5.0
 tokenizers==0.14.1
 torch==2.1.1
 tqdm==4.66.1
-traitlets @ file:///croot/traitlets_1671143879854/work
+traitlets
 transformers @ git+https://github.com/huggingface/transformers.git@d7cb5e138ec1ccc848a554574b1a89f0dfaf0e90
 num2words
