@@ -65,7 +65,7 @@ class BiggerTree:
 
         # graph is a networkx graph storing the clustered graph structure 
         self.graph = graph
-        # node_dict stores all metadata, including the quer, program, description
+        # node_dict stores all metadata, including the query, program, description
         self.node_dict = node_dict  
         # codebank stores the current bank of helper functions 
         self.codebank = codebank_cls(exp_name, 

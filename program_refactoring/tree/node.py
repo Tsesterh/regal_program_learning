@@ -7,9 +7,9 @@ import subprocess
 from pathlib import Path
 
 from sexpdata import Symbol
-from dataflow.core.lispress import (parse_lispress,
-                                    render_compact,
-                                    render_pretty)
+#from dataflow.core.lispress import (parse_lispress,
+#                                    render_compact,
+#                                    render_pretty)
 
 from program_refactoring.domains.logos.visual_sim import load_img
 from program_refactoring.headers import LOGO_HEADER
@@ -83,6 +83,7 @@ class PythonNode(Node):
 
         # check to see if it executes 
         if not self.is_returning(program.strip()):
+            #TODO Tobi: something is wrong here
             self.exec_program = self.wrap_program(program.strip())
         else:
             self.exec_program = program 
@@ -116,7 +117,10 @@ class PythonNode(Node):
 
         parsed = ast.parse(program)
         helpers = []
-        imports = [ast.parse("import json"), ast.parse("from program_refactoring.domains.scan.scan_helpers import *")]
+        #TODO: (Tobi) I removed this as there is no scan_helpers functionality in the repository
+        #imports = [ast.parse("import json"), ast.parse("from program_refactoring.domains.scan.scan_helpers import *")]
+        imports = [ast.parse("import json")]#, ast.parse("from program_refactoring.domains.scan.scan_helpers import *")]
+
         for node in parsed.body:
             if isinstance(node, ast.FunctionDef):
                 helpers.append(node)

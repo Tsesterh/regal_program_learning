@@ -206,7 +206,10 @@ NEW HELPERS: <code for helper functions or refactored functions>
         if use_self_consistency: 
             new_helpers, new_programs = self.run_self_consistency(model, prompt, n_variants=self_consistency_width)
         else:
-            result_text = model(prompt, agent=False)
+            if "gpt" in model.model_name:
+                result_text = model(prompt, agent=False)
+            else:
+                result_text = model(prompt, agent=False)
         
             logger.info(f"Raw result from {model.model_name}:\n{result_text}") 
 

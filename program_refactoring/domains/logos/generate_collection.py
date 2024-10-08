@@ -54,4 +54,3 @@ if __name__ == "__main__":
 
 
     get_and_save_embeddings(logo_docs, logo_codes, logo_ids, persist_directory=args.output_dir, name=args.name)
-        

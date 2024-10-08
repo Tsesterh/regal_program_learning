@@ -113,7 +113,8 @@ def rerun_acc_python(example, path):
 
 def check_acc_all(agent, examples, path, batch_size=5, rerun=False):
     if agent.task == "logos":
-        return check_acc_logo(agent, examples, path, batch_size=batch_size, rerun=rerun)
+        return check_acc_logo_mod(agent, examples, path, batch_size=batch_size, rerun=rerun)
+        #return check_acc_logo(agent, examples, path, batch_size=batch_size, rerun=rerun)
     else:
         return check_acc_python(agent, examples, path, batch_size=batch_size, rerun=rerun)
 
@@ -142,6 +143,30 @@ def check_acc_logo(agent, examples, path, batch_size=5, rerun=False):
 
         tfs.append(vis_compare(pred_img, gold_img) > 0.98) 
     return tfs, pred_progs             
+
+def check_acc_logo_mod(agent, examples, path, batch_size=5, rerun=False):
+    pred_imgs_per_example, pred_progs_per_example = agent.do_multiple_mod(examples, batch_size, rerun)
+    tfs = []
+    print(f"Checking accuracy...")
+    for example, pred_imgs, pred_progs in tqdm(zip(examples, pred_imgs_per_example, pred_progs_per_example), total=len(examples)):
+        if all(isinstance(pred_prog, int) for pred_prog in pred_progs):
+            return pred_imgs, pred_progs
+
+        if example.program is not None:
+            gold_node = agent.node_cls(example.query, example.program, type="gold", temp_dir=path, name=example.id)
+            fname = path / f"{example.id}_gold.py"
+            gold_img = gold_node.execute(fname)
+        else:
+            gold_img = example.expected_answer
+
+        # Check if any of the outputs is correct
+        correct = False
+        for pred_img in pred_imgs:
+            if vis_compare(pred_img, gold_img) > 0.98:
+                correct = True
+                break
+        tfs.append(correct)
+    return tfs, pred_progs_per_example
 
 def check_acc_logo_single(agent, example, path):
     # check accuracy (without batching)
@@ -354,6 +379,7 @@ if __name__ == "__main__":
 
 
     else:
+        print("Checking accuracy by calling model...")
         corrects, preds = check_acc_all(agent, 
                                         test_data, 
                                         save_path, 

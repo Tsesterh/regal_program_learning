@@ -16,7 +16,7 @@ from chromadb.utils import embedding_functions
 
 from program_refactoring.model.model import Model
 from program_refactoring.model.openai_model import OpenAIModel, TokenCounter
-from program_refactoring.model.hf_model import HFModel, CodeLlamaModel, LemurModel
+from program_refactoring.model.hf_model import HFModel, CodeLlamaModel, LemurModel#, FineTunedCodeLlama
 from program_refactoring.model.prompts import (gpt_logo_agent_prompt, 
                                                gpt_python_agent_prompt) 
 from program_refactoring.model.llama_prompts import (llama_logo_agent_completion_prompt, 
@@ -38,6 +38,12 @@ MODEL_DICT = {"gpt-3.5-turbo": OpenAIModel,
               "codellama/CodeLlama-7b-Instruct-hf": CodeLlamaModel,
               "codellama/CodeLlama-13b-Instruct-hf": CodeLlamaModel,
               "codellama/CodeLlama-34b-Instruct-hf": CodeLlamaModel,
+              "xu3kev/deepseekcoder-7b-logo-pbe": CodeLlamaModel, #TODO Tobi i made it a CodeLlamaModel although it isnt
+              "deepseek-ai/deepseek-coder-7b-instruct-v1.5": CodeLlamaModel,
+              "codellama/CodeLlama-70b-Instruct-hf": CodeLlamaModel,
+              "deepseek-ai/DeepSeek-Coder-V2-Instruct-0724": CodeLlamaModel,
+              "legraphista/DeepSeek-Coder-V2-Instruct-0724-IMat-GGUF": CodeLlamaModel,
+              #"tsesterh/codellama_7b_instruct_logo": FineTunedCodeLlama,
               "lemur70b": LemurModel,
               LEMUR_PATH: LemurModel, # add your lemur path here
               "token_counter": TokenCounter} 
@@ -122,6 +128,8 @@ class Agent:
             self.model_type = "llama"
         elif "lemur" in model.model_name:
             self.model_type = "lemur"
+        elif "deepseek" in model.model_name: #TODO Tobi: add your model name here
+            self.model_type = "llama"
 
         if self.model_type in ['llama', 'lemur']:
             self.prompt_builder = self.llama_prompt_builder
@@ -322,7 +330,7 @@ class Agent:
 
         # execute program 
         try:
-            node =  self.node_cls(example.query, output, type="pred", temp_dir=self.save_path, name=f"{example.id}", node_id=f"{example.id}") 
+            node =  self.node_cls(example.query, output, type="pred", temp_dir=self.save_path, name=f"{example.id}", node_id=f"{example.id}")  
             fname = self.save_path / f"{example.id}_pred.py"
             result = node.execute(fname)
         except SyntaxError:
@@ -331,7 +339,8 @@ class Agent:
             result = None
         return result, output
 
-    def do_multiple(self, examples, batch_size=5, rerun=False, exclude_current=True): 
+    #TODO Tobi: change this function to perform multiple predictions for each example (== sampling from the model) and then compare the results
+    def do_multiple(self, examples, batch_size=5, rerun=False, exclude_current=True, current_index = 0): 
         if not rerun: 
             # retrieve example from function examples 
             # then retrieve example from train 
@@ -376,11 +385,11 @@ class Agent:
                                       temp_dir=self.save_path, 
                                       name=f"{example.id}", 
                                       node_id=f"{example.id}") 
-                    fname = self.save_path / f"{example.id}_pred.py"
+                    fname = self.save_path / f"{example.id}_{current_index}_pred.py"
                     result = node.execute(fname)
                 else:
                     # manually execute 
-                    fname = self.save_path / f"{example.id}_pred.py"
+                    fname = self.save_path / f"{example.id}_{current_index}_pred.py"
                     out, errs = subprocess.Popen(["python", fname], 
                                                  stdout=subprocess.PIPE, 
                                                  stderr=subprocess.PIPE).communicate()
@@ -389,13 +398,89 @@ class Agent:
                     result = out.decode("utf-8").strip()
 
             except SyntaxError:
+                print("Syntax error")
                 result = None
             except AttributeError:
+                print("Attribute error")
                 result = None
             except json.decoder.JSONDecodeError: 
+                print("JSON decode error")
                 result = None
             results.append(result)
         return results, outputs 
+    
+
+    def do_multiple_mod(self, examples, batch_size=5, rerun=False, exclude_current=True, current_index=0): 
+        if not rerun: 
+            prompts = []
+            for example in examples:
+                if len(self.collections) == 1:
+                    icl_examples = self.retrieve_similar("train", example, k=self.max_budget, exclude_current=exclude_current)
+                else:
+                    n_tc_exs = int(self.budget_split * self.max_budget)
+                    testcase_examples = self.retrieve_similar("test_cases", example, k=n_tc_exs, exclude_current=exclude_current)
+                    n_train_exs = self.max_budget - n_tc_exs
+                    train_examples = self.retrieve_similar("train", example, k=n_train_exs, exclude_current=exclude_current)
+                    icl_examples = testcase_examples + train_examples
+
+                prompt = self.build_prompt(example, icl_examples)
+                prompts.append(prompt)
+
+            if hasattr(self.model, "run_multiple_mod"):
+                outputs = self.model.run_multiple_mod(
+                    prompts, batch_size=batch_size, infilling=self.infilling, agent=True,
+                    language=self.language, comment_tok=self.comment_tok
+                )
+            else:
+                outputs = []
+                for prompt in prompts:
+                    output = self.model(
+                        prompt, infilling=self.infilling, agent=True,
+                        language=self.language, comment_tok=self.comment_tok
+                    )
+                    outputs.append([output])  # Wrap in a list for consistency
+        else:
+            outputs = [["skip"] for _ in range(len(examples))]
+
+        results = [] 
+        print("Executing programs...")
+        for example, outputs_per_example in tqdm(zip(examples, outputs), total=len(examples)):
+            results_per_example = []
+            for idx, output in enumerate(outputs_per_example):
+                if isinstance(output, int):
+                    results_per_example.append(None)
+                    continue
+
+                try:
+                    if output != "skip": 
+                        node = self.node_cls(
+                            example.query, output, type="pred", temp_dir=self.save_path,
+                            name=f"{example.id}_{idx}", node_id=f"{example.id}_{idx}"
+                        )
+                        fname = self.save_path / f"{example.id}_{current_index}_{idx}_pred.py"
+                        result = node.execute(fname)
+                    else:
+                        fname = self.save_path / f"{example.id}_{current_index}_{idx}_pred.py"
+                        out, errs = subprocess.Popen(
+                            ["python", fname], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                        ).communicate()
+                        errs = errs.decode("utf-8")
+                        result = out.decode("utf-8").strip()
+                except (SyntaxError, AttributeError, json.decoder.JSONDecodeError):
+                    print("Execution error")
+                    result = None
+                results_per_example.append(result)
+            results.append(results_per_example)
+        return results, outputs
 
 
-
+    
+    # Modified version of do_multiple to perform multiple predictions for each example and compare results.
+    def do_multiple_sampling(self, examples, batch_size=5, rerun=False, exclude_current=True, num_samples=5): 
+        results = []
+        outputs = []
+        for i in range(num_samples):
+            res, outs = self.do_multiple(examples, batch_size=batch_size, rerun=rerun, exclude_current=exclude_current, current_index=i)
+            results.append(res)
+            outputs.append(outs)
+        return results, outputs

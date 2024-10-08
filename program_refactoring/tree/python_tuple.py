@@ -214,6 +214,7 @@ Do not include anything in your output that is not valid Python code. Your progr
         codebank_ids = []
         for idx, node in self.nodes.items():
             # no more than 20 total examples 
+            # TODO: (Tobi) check if node.query is better here then node.program (without imports and comments)
             codebank_ids += codebank.get_relevant(node.query, k = 20 // len(self.nodes))
         codebank_ids = set(codebank_ids)
         codebank_funcs = [codebank.get(id) for id in codebank_ids]

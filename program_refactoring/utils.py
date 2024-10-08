@@ -15,6 +15,9 @@ def get_and_save_embeddings(queries, programs, ids, name, persist_directory, met
                     api_key=os.environ['OPENAI_API_KEY'],
                     model_name="text-embedding-ada-002"
                 )
+    
+    print("Using Embedding Function: ", openai_ef)
+    
     if use_query:
         # index on the query
         docs = queries

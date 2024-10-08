@@ -19,6 +19,7 @@ def main(args):
 
     data = read_jsonl(args.in_path)
     for i, line in enumerate(data): 
+        print(i)
         content = f"{LOGO_HEADER}\n{line['program']}"
         name = re.sub(" ","_", line['language'][0])
         fname = f"{args.out_path}/logo_{i}_{name}.jpg"
