@@ -202,6 +202,9 @@ class CodeLlamaModel(HFModel):
 
         n_samples = int(os.getenv("N_SAMPLES", 1))
 
+        if self.tokenizer.pad_token_id is None:
+            self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
+            
         texts = self.gen_pipeline(
             dataset(),
             max_new_tokens=500,

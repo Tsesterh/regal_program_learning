@@ -43,6 +43,7 @@ MODEL_DICT = {"gpt-3.5-turbo": OpenAIModel,
               "codellama/CodeLlama-70b-Instruct-hf": CodeLlamaModel,
               "deepseek-ai/DeepSeek-Coder-V2-Instruct-0724": CodeLlamaModel,
               "legraphista/DeepSeek-Coder-V2-Instruct-0724-IMat-GGUF": CodeLlamaModel,
+              "meta-llama/Llama-3.2-3B-Instruct": CodeLlamaModel,
               #"tsesterh/codellama_7b_instruct_logo": FineTunedCodeLlama,
               "lemur70b": LemurModel,
               LEMUR_PATH: LemurModel, # add your lemur path here
@@ -129,6 +130,8 @@ class Agent:
         elif "lemur" in model.model_name:
             self.model_type = "lemur"
         elif "deepseek" in model.model_name: #TODO Tobi: add your model name here
+            self.model_type = "llama"
+        elif "llama" in model.model_name:
             self.model_type = "llama"
 
         if self.model_type in ['llama', 'lemur']:

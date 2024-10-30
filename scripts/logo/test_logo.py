@@ -64,7 +64,7 @@ if __name__ == "__main__":
             '--train_log_path', f'{train_log}',
             #'--train_log_path', '/ceph/tsesterh/abstraction/regal_program_learning',
             '--test_path', 'logo_data/python/test.jsonl',
-            '--model_name', 'codellama/CodeLlama-7b-Instruct-hf', #'tsesterh/codellama_7b_instruct_logo', #'codellama/CodeLlama-7b-Instruct-hf', #'codellama/CodeLlama-70b-Instruct-hf', #'deepseek-ai/DeepSeek-Coder-V2-Instruct-0724', #'deepseek-ai/deepseek-coder-7b-instruct-v1.5', ', # 'xu3kev/deepseekcoder-7b-logo-pbe',
+            '--model_name', 'meta-llama/Llama-3.2-3B-Instruct',#'codellama/CodeLlama-7b-Instruct-hf', #'tsesterh/codellama_7b_instruct_logo', #'codellama/CodeLlama-7b-Instruct-hf', #'codellama/CodeLlama-70b-Instruct-hf', #'deepseek-ai/DeepSeek-Coder-V2-Instruct-0724', #'deepseek-ai/deepseek-coder-7b-instruct-v1.5', ', # 'xu3kev/deepseekcoder-7b-logo-pbe',
             '--out_dir',  f'test_out/logo/exp_{timestamp}_{exp_type}_{seed}_seed',
             #'--logdir',
             '--seed', f'{seed}',

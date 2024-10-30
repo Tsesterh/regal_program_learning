@@ -1,0 +1,4 @@
+{"program": "for i in range(8):\n    forward(1*i)\n    left(90.0)", "language": ["a greek spiral with 7 turns"]}
+{"program": "for i in range(5):\n    forward(1*i)\n    left(90.0)", "language": ["a greek spiral with 4 turns"]}
+{"program": "for i in range(4):\n    forward(1*i)\n    left(90.0)", "language": ["a greek spiral with 3 turns"]}
+{"program": "for i in range(3):\n    forward(1*i)\n    left(90.0)", "language": ["a greek spiral with 2 turns"]}
